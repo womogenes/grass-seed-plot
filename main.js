@@ -2,7 +2,7 @@ let seeds = [];
 const charges = [];
 const lastFrameTimestamp = new Date();
 
-const spacing = 20;
+const spacing = 40;
 const k = 1e6; // Electric constant
 
 let capturer;
@@ -45,7 +45,7 @@ window.setup = () => {
 
   let s = 40;
   let q = 2;
-  charges.push(
+  /* charges.push(
     ...[
       {
         pos: [width / 2 - 200, height / 2 - 200],
@@ -53,36 +53,25 @@ window.setup = () => {
         q: q,
         fixed: true,
       },
-      {
-        pos: [width / 2 - 200, height / 2 + 200],
-        vel: [s, s],
-        q: -q,
-        fixed: true,
-      },
-      {
-        pos: [width / 2 + 200, height / 2 + 200],
-        vel: [s, -s],
-        q: q,
-        fixed: true,
-      },
-      {
-        pos: [width / 2 + 200, height / 2 - 200],
-        vel: [-s, -s],
-        q: -q,
-        fixed: true,
-      },
-      {
-        pos: [width / 2 + 200, height / 2 - 400],
-        vel: [-s, -s],
-        q: -q,
-        fixed: true,
-      },
     ]
-  );
+  ); */
+  for (let i = 0; i < 20; i++) {
+    const theta = (2 * Math.PI * i) / 20;
+    charges.push({
+      pos: [
+        Math.cos(theta) * 400 + width / 2,
+        Math.sin(theta) * 400 + height / 2,
+      ],
+      vel: [-Math.sin(theta) * 50, Math.cos(theta) * 50],
+      q: ((i % 2) - 0.5) * 3,
+      fixed: false,
+    });
+  }
 
   for (let charge of charges) {
     charge.pos = createVector(...charge.pos);
     charge.vel = createVector(...charge.vel);
+    charge.r = Math.max(10, Math.sqrt(Math.abs(charge.q)) * 30);
   }
 
   startTime = Date.now();
@@ -97,6 +86,7 @@ window.draw = () => {
   } else if (frameCount === endFrame && recording) {
     capturer.stop();
     capturer.save();
+    recording = false;
   }
   prevT = t;
   t = (Date.now() - startTime) / 1000;
@@ -112,51 +102,62 @@ window.draw = () => {
   // charges[0].pos.x = mouseX;
   // charges[0].pos.y = mouseY;
 
-  // Make charges orbit each other
-  for (let i = 0; i < charges.length; i++) {
-    for (let j = i + 1; j < charges.length; j++) {
-      const a = charges[i];
-      const b = charges[j];
-      const acc = eForce(a.pos, b.pos, a.q, b.q);
-      a.vel.sub(p5.Vector.mult(acc, dt));
-      b.vel.add(p5.Vector.mult(acc, dt));
-    }
-  }
-
   // Move charges
   for (let charge of charges) {
     if (!charge.fixed) charge.pos.add(p5.Vector.mult(charge.vel, dt));
 
     // Bounce against edges
-    if (charge.pos.x > width) {
-      charge.pos.x = width;
+    if (charge.pos.x > width - charge.r) {
+      charge.pos.x = width - charge.r;
       charge.vel.x *= -1;
     }
-    if (charge.pos.x < 0) {
-      charge.pos.x = 0;
+    if (charge.pos.x < charge.r) {
+      charge.pos.x = charge.r;
       charge.vel.x *= -1;
     }
-    if (charge.pos.y > height) {
-      charge.pos.y = height;
+    if (charge.pos.y > height - charge.r) {
+      charge.pos.y = height - charge.r;
       charge.vel.y *= -1;
     }
-    if (charge.pos.y < 0) {
-      charge.pos.y = 0;
+    if (charge.pos.y < charge.r) {
+      charge.pos.y = charge.r;
       charge.vel.y *= -1;
+    }
+  }
+
+  // Make charges orbit each other
+  for (let i = 0; i < charges.length; i++) {
+    for (let j = i + 1; j < charges.length; j++) {
+      const a = charges[i];
+      const b = charges[j];
+      let acc = eForce(a.pos, b.pos, a.q, b.q);
+
+      const dp = p5.Vector.sub(b.pos, a.pos);
+      const d = dp.mag();
+      if (d < a.r + b.r) {
+        const mtd = (a.r + b.r - d) / 2;
+        a.pos.sub(p5.Vector.mult(dp, mtd / d));
+        b.pos.add(p5.Vector.mult(dp, mtd / d));
+        acc = dp;
+      }
+
+      acc.limit(500);
+      a.vel.sub(p5.Vector.mult(acc, dt));
+      b.vel.add(p5.Vector.mult(acc, dt));
     }
   }
 
   for (let seed of seeds) {
     let acc = createVector(0, 0);
     for (let charge of charges) {
-      acc = p5.Vector.add(acc, eForce(charge.pos, seed.pos, charge.q, 10));
+      acc = p5.Vector.add(acc, eForce(charge.pos, seed.pos, charge.q, 1e2));
     }
 
     // strokeWeight(Math.max(1, Math.min(acc.mag() / 100, 2)));
     stroke(Math.max(128, 196 - acc.mag() / 4));
 
-    if (acc.mag() < 2) {
-      acc.mult(2 / acc.mag());
+    if (acc.mag() < 10) {
+      acc.mult(10 / acc.mag());
     }
     acc.limit(60);
     let startPos = p5.Vector.sub(seed.pos, p5.Vector.mult(acc, 0.5));
@@ -182,7 +183,7 @@ window.draw = () => {
     } else {
       stroke(100, 100, 196);
     }
-    strokeWeight(Math.sqrt(Math.abs(charge.q)) * 30);
+    strokeWeight(charge.r * 2);
     point(charge.pos.x, charge.pos.y);
   }
 
