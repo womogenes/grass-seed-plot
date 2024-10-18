@@ -43,30 +43,24 @@ window.setup = () => {
   }
   console.log(`Generated ${seeds.length} seeds`);
 
-  let s = 40;
+  let s = 100;
   let q = 2;
-  /* charges.push(
+  charges.push(
     ...[
       {
-        pos: [width / 2 - 200, height / 2 - 200],
-        vel: [-s, s],
+        pos: [width / 2, height / 2],
+        vel: [0, 0],
         q: q,
         fixed: true,
       },
+      {
+        pos: [width / 2 + 400, height / 2],
+        vel: [0, s],
+        q: -q,
+        fixed: false,
+      },
     ]
-  ); */
-  for (let i = 0; i < 20; i++) {
-    const theta = (2 * Math.PI * i) / 20;
-    charges.push({
-      pos: [
-        Math.cos(theta) * 400 + width / 2,
-        Math.sin(theta) * 400 + height / 2,
-      ],
-      vel: [-Math.sin(theta) * 50, Math.cos(theta) * 50],
-      q: ((i % 2) - 0.5) * 3,
-      fixed: false,
-    });
-  }
+  );
 
   for (let charge of charges) {
     charge.pos = createVector(...charge.pos);
@@ -136,8 +130,8 @@ window.draw = () => {
       const d = dp.mag();
       if (d < a.r + b.r) {
         const mtd = (a.r + b.r - d) / 2;
-        a.pos.sub(p5.Vector.mult(dp, mtd / d));
-        b.pos.add(p5.Vector.mult(dp, mtd / d));
+        if (!a.fixed) a.pos.sub(p5.Vector.mult(dp, mtd / d));
+        if (!b.fixed) b.pos.add(p5.Vector.mult(dp, mtd / d));
         acc = dp;
       }
 
