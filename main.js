@@ -2,7 +2,7 @@ let seeds = [];
 const charges = [];
 const lastFrameTimestamp = new Date();
 
-const spacing = 40;
+const spacing = 20;
 const k = 1e6; // Electric constant
 
 let capturer;
@@ -28,7 +28,7 @@ window.setup = () => {
     autoSaveTime: 1,
   });
 
-  canvas = createCanvas(1080, 1920);
+  canvas = createCanvas(600, 600);
   pixelDensity(1);
   for (let x = 0; x <= width; x += spacing) {
     for (let y = 0; y <= height; y += spacing) {
@@ -43,8 +43,8 @@ window.setup = () => {
   }
   console.log(`Generated ${seeds.length} seeds`);
 
-  let s = 100;
-  let q = 2;
+  let s = 30;
+  let q = 0.5;
   charges.push(
     ...[
       {
@@ -54,7 +54,7 @@ window.setup = () => {
         fixed: true,
       },
       {
-        pos: [width / 2 + 400, height / 2],
+        pos: [width / 2 + 200, height / 2],
         vel: [0, s],
         q: -q,
         fixed: false,
